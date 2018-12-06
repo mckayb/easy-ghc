@@ -1,6 +1,4 @@
 import { TextDocument, Position, CancellationToken } from "vscode";
-import { Maybe } from "monet";
-
 import { exec } from "child_process";
 
 const parse = (document: TextDocument, position: Position, token: CancellationToken): Promise<string> => {
