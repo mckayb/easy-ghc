@@ -4,12 +4,7 @@
 import * as vscode from 'vscode';
 import { GHCI } from './ghci';
 import parse from "./doc_parser";
-
-const trace = (s: any) => (t: any) => {
-  console.log(s);
-  console.log(t);
-  return t;
-}
+import { trace } from "./utils";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -23,13 +18,17 @@ export function activate(context: vscode.ExtensionContext) {
     let hover = vscode.languages.registerHoverProvider({ language: "haskell", scheme: "file" }, {
       provideHover(document, position, token): Promise<vscode.Hover> {
         return parse(document, position, token)
-          .then(res => handler.then(ghci => ghci.send(":t " + res).waitFor("\n")))
-          .then(x => new vscode.Hover(x.getOutput()));
+          .then(trace("Parse Result: "))
+          .then(res => res.cata(
+            () => Promise.reject(),
+            (x) => handler.then(ghci => ghci.send(":t " + x).waitFor("\n"))
+                          .then(ghci => ghci.print())
+                          .then(ghci => new vscode.Hover(ghci.getOutput()))
+          ));
       }
     });
 
-    // context.subscriptions.push(hover, ghci);
-    context.subscriptions.push(hover);
+    context.subscriptions.push(hover, ghci);
 }
 
 // this method is called when your extension is deactivated

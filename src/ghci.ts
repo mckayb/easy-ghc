@@ -3,7 +3,7 @@
 import { Disposable, workspace } from "vscode";
 import { ChildProcess, spawn } from "child_process";
 
-type Listener = (x: string) => void
+type Listener = (x: string) => void;
 
 export class GHCI implements Disposable {
   private outState: string = "";
@@ -71,6 +71,10 @@ export class GHCI implements Disposable {
 
       getOutput: (): string => {
         return this.lastWanted;
+      },
+
+      getErrOutput: (): string => {
+        return this.errState;
       }
     };
   }
