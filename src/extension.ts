@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   let timeout: NodeJS.Timer | null = null
 
-  const selection = vscode.window.onDidChangeTextEditorSelection(event => {
+  const selectionSubscription = vscode.window.onDidChangeTextEditorSelection(event => {
     const document = event.textEditor.document
     if (document.languageId !== "haskell") {
       return
@@ -73,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
     }, 300)
   })
 
-  context.subscriptions.push(ghci, selection)
+  context.subscriptions.push(ghci, selectionSubscription)
 }
 
 // this method is called when your extension is deactivated
