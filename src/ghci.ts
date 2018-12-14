@@ -3,26 +3,29 @@
 import { Disposable, workspace } from "vscode";
 import { ChildProcess, spawn } from "child_process";
 
-type Listener = (x: string) => void;
+type Listener = (type: "error" | "data", x: string) => void;
 
 export class GHCI implements Disposable {
   private outState: string = "";
   private errState: string = "";
   private lastWanted: string = "";
-  private listeners: Listener[] = [];
+  private listener: Listener;
   private proc: ChildProcess;
+  private timeout: NodeJS.Timer | null = null;
 
   constructor() {
     try {
       this.proc = spawn("stack", ["ghci"], {cwd: workspace.rootPath + "/test-shit"});
 
+      this.listener = (type, x) => {}
       this.proc.stdout.on("data", (data) => {
         this.outState += data.toString();
-        this.listeners.forEach(f => f(data.toString()));
+        this.listener("data", data.toString());
       });
 
       this.proc.stderr.on("data", (data) => {
         this.errState += data.toString();
+        this.listener("error", data.toString());
       });
 
       this.proc.on("close", (code) => {
@@ -41,22 +44,28 @@ export class GHCI implements Disposable {
     return {
       waitFor: (str: string): Promise<any> => {
         return new Promise((resolve, reject) => {
-          const oldListeners = this.listeners;
-          this.listeners = this.listeners.concat([(x) => {
-            const index = this.outState.indexOf(str);
-            if (index > -1) {
-              this.lastWanted = this.outState.substr(0, index);
-              this.outState = "";
-              this.listeners = oldListeners;
-              resolve(this.handler());
+          this.listener = (type, data) => {
+            if (this.timeout !== null) {
+              clearTimeout(this.timeout)
             }
-          }]);
-        });
-      },
 
-      addListener: (f: (x: string) => void) => {
-        this.listeners = this.listeners.concat([f]);
-        return this.handler();
+            this.timeout = setTimeout(() => {
+              if (type === "data") {
+                const index = this.outState.indexOf(str);
+                if (index > -1) {
+                  this.lastWanted = this.outState.substr(0, index);
+                  this.outState = "";
+                  this.errState = "";
+                  resolve(this.handler());
+                }
+              } else {
+                const state = this.errState;
+                this.errState = "";
+                reject(state);
+              }
+            }, 300)
+          }
+        });
       },
 
       print: () => {
