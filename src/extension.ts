@@ -60,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       // TODO: Could probably be smarter about qualified imports
       // Instead of just looking for a ".", you could verify the "."
-      // against list list of qualified imports collected above
+      // against a list of qualified imports collected above
       const isTypeNotValue = text.match(/^[A-Z]/) !== null && text.indexOf(".") == -1
       const command = isTypeNotValue ? ":k" : ":t"
 
