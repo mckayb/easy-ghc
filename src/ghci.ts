@@ -4,6 +4,13 @@ import { Disposable, workspace } from "vscode";
 import { ChildProcess, spawn } from "child_process";
 
 type Listener = (type: "error" | "data", x: string) => void;
+export type GHCIHandler = {
+   waitFor: (str: string) => Promise<GHCIHandler>,
+   print: () => GHCIHandler,
+   send: (cmd: string) => GHCIHandler,
+   getOutput: () => string,
+   getErrOutput: () => string
+}
 
 export class GHCI implements Disposable {
   private outState: string = "";
@@ -40,9 +47,9 @@ export class GHCI implements Disposable {
     }
   }
 
-  handler() {
+  handler(): GHCIHandler {
     return {
-      waitFor: (str: string): Promise<any> => {
+      waitFor: (str: string): Promise<GHCIHandler> => {
         return new Promise((resolve, reject) => {
           this.listener = (type, data) => {
             if (this.timeout !== null) {
